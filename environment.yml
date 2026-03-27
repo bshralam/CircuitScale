@@ -1,0 +1,17 @@
+name: mr-circuit-scaling
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - numpy
+  - scipy
+  - pandas
+  - matplotlib
+  - jupyterlab
+  - pyscf
+  - pip
+  - pip:
+      - openfermion
+      - openfermionpyscf
+      - qiskit
+      - qiskit-aer
