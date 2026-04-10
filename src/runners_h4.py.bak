@@ -6,9 +6,7 @@ import pandas as pd
 from .systems import MoleculeSpec
 from .references import compute_reference
 from .hamiltonians import molecular_qubit_hamiltonian
-#from .ansatze import hea, uccsd_placeholder
-from .ansatze import hea_with_hf_init, uccsd_placeholder
-from .vqe_utils import qubitop_to_sparsepauliop, run_vqe
+from .ansatze import hea, uccsd_placeholder
 from .resources import circuit_resources
 
 
@@ -22,23 +20,14 @@ def _parse_h4_delta_from_name(name: str) -> float:
     return float(m.group(1))
 
 
-"""def run_sweep_h4(i
+def run_sweep_h4(
     specs: List[MoleculeSpec],
     hea_layers=(1, 2, 3),
     ncas: int = 4,
     nelecas: Tuple[int, int] = (2, 2),
 ) -> pd.DataFrame:
     rows: List[Dict[str, Any]] = []
-"""
 
-def run_sweep_h4(
-    specs: List[MoleculeSpec],
-    hea_layers=(1, 2, 3, 4, 5, 6),
-    target_error: float = 1.6e-3,
-    maxiter: int = 300,
-    ncas: int = 4,
-    nelecas: Tuple[int, int] = (2, 2),
-) -> pd.DataFrame:
     for spec in specs:
         delta = _parse_h4_delta_from_name(spec.name)
 
