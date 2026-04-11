@@ -22,15 +22,6 @@ def _parse_h4_delta_from_name(name: str) -> float:
     return float(m.group(1))
 
 
-"""def run_sweep_h4(i
-    specs: List[MoleculeSpec],
-    hea_layers=(1, 2, 3),
-    ncas: int = 4,
-    nelecas: Tuple[int, int] = (2, 2),
-) -> pd.DataFrame:
-    rows: List[Dict[str, Any]] = []
-"""
-
 def run_sweep_h4(
     specs: List[MoleculeSpec],
     hea_layers=(1, 2, 3, 4, 5, 6),
@@ -39,6 +30,7 @@ def run_sweep_h4(
     ncas: int = 4,
     nelecas: Tuple[int, int] = (2, 2),
 ) -> pd.DataFrame:
+    rows: List[Dict[str, Any]] = []
     for spec in specs:
         delta = _parse_h4_delta_from_name(spec.name)
 
@@ -54,14 +46,35 @@ def run_sweep_h4(
         # ----- Hamiltonian / qubits
         qham, n_qubits = molecular_qubit_hamiltonian(spec)
 
-        # ----- HEA resources at different depths
+        # ----- Qubit Hamiltonian for VQE
+        op = qubitop_to_sparsepauliop(qham, n_qubits)
+
+        # H4 has 4 electrons in this setup
+        n_electrons = 4
+
+        # ----- HEA resources + VQE error at different depths
+        best_layer = None
+        best_depth = None
+        best_n_2q = None
+        best_energy = None
+        best_error = None
+
         for L in hea_layers:
-            qc = hea(n_qubits, layers=L, entangle="linear")
+            qc = hea_with_hf_init(
+                n_qubits=n_qubits,
+                n_electrons=n_electrons,
+                layers=L,
+                entangle="linear",
+            )
             res = circuit_resources(qc)
+
+            vqe_res = run_vqe(op, qc, maxiter=maxiter, seed=7)
+            err = abs(vqe_res.energy - ref.e_fci)
+
             rows.append({
                 "system": "H4",
                 "name": spec.name,
-                "param": delta,          # distortion parameter
+                "param": delta,
                 "mr_score": ref.mr_score,
                 "ansatz": "HEA",
                 "layers": L,
@@ -71,13 +84,45 @@ def run_sweep_h4(
                 "n_2q": res.n_2q,
                 "E_HF": ref.ehf,
                 "E_FCI": ref.e_fci,
-                # store NOONs (up to 4 for the active space)
+                "E_VQE": vqe_res.energy,
+                "vqe_error": err,
+                "target_error": target_error,
+                "meets_target": err <= target_error,
                 "noon_0": float(ref.noon[0]),
                 "noon_1": float(ref.noon[1]),
                 "noon_2": float(ref.noon[2]),
                 "noon_3": float(ref.noon[3]),
             })
 
+            if best_layer is None and err <= target_error:
+                best_layer = L
+                best_depth = res.depth
+                best_n_2q = res.n_2q
+                best_energy = vqe_res.energy
+                best_error = err
+
+        rows.append({
+            "system": "H4",
+            "name": spec.name,
+            "param": delta,
+            "mr_score": ref.mr_score,
+            "ansatz": "HEA_required",
+            "layers": best_layer,
+            "n_qubits": n_qubits,
+            "n_params": None,
+            "depth": best_depth,
+            "n_2q": best_n_2q,
+            "E_HF": ref.ehf,
+            "E_FCI": ref.e_fci,
+            "E_VQE": best_energy,
+            "vqe_error": best_error,
+            "target_error": target_error,
+            "meets_target": best_layer is not None,
+            "noon_0": float(ref.noon[0]),
+            "noon_1": float(ref.noon[1]),
+            "noon_2": float(ref.noon[2]),
+            "noon_3": float(ref.noon[3]),
+        })
         # ----- UCCSD placeholder (swap later)
         qc_u = uccsd_placeholder(n_qubits)
         res_u = circuit_resources(qc_u)
