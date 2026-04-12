@@ -1,0 +1,44 @@
+Code structure and Results Overview
+
+1) Folder : src
+* systems.py - Defines molecules (H2,H4), creates geometries (bond length, distortion), Output: MoleculeSpec.
+* references.py - Runs classical quantum chemistry (HF, FCI, CASSCF),computes E_HF, E_FCI, NOONs, MR score.
+* hamiltonians.py - Converts molecule to qubit Hamiltonian.
+* ansatze.py - Builds circuits.
+* vqe_utils.py - RUns VQE optimization, outputs energy and convergence.
+* resources.py - Computes circuit metrics (depth, number of parameters, number of 2-qubit gates).
+* runnners.py - Runs full workflow for H2 (compute reference, build Hamiltonian, run VQE, store results).
+* runners_h4.py - Same as above for H4 (loops over distortions, finds best layer for target accuracy)
+
+2) Folder: notebooks
+* 01_h2_scan.ipynb -  Baseline to verify that correct physics is recovered for reference system. Generates geometries by varying H-H bond distance R, runs sweep (computes reference energies (HF, FCI), NOONs, MR Score, VQE Results (for different HEA layers), circuit resources (depth, 2Q gates)), save results (h2_scan.csv), filter results for specific ansatze (HEA) and required layers.
+
+*02_h4_scan.ipynb - Generate geometries (distortion parameters for square to distorted), run sweep (compute reference energies (HF,FCI,CASSCF), NOONS (4 orbs), MR Score, VQE energies for multiple HEA layers, circuit resources), select best results based on best achievable VQE error, best required layers.
+
+3) Folder: Results/figures 
+* 01_h2_mrscore_vs_R : Multireference Character vs Bond Distance (H₂)-As the bond stretches, MR character increases, showing the system becomes strongly correlated and harder for simple methods.
+
+* 02_h2_noons_vs_R :  Natural Orbital Occupations vs Bond Distance (H₂) - Occupations move away from (2,0) toward (1,1), confirming increasing multireference nature as the bond breaks.
+
+* 03_h2_required _layers_vs_mrscore :  Required HEA Layers vs MR Character (H₂)- More multireference systems need more layers, meaning deeper ansatz is required to capture correlation.
+
+* 04_h2_required_depth_vs_mrscore :  Required Circuit Depth vs MR Character (H₂)- Circuit depth increases with MR character, showing higher complexity for strongly correlated states.
+
+* 05_h2_required_2q_vs_mrscore :  Required Two-Qubit Gates vs MR Character (H₂)- Gate count rises with MR character, indicating more entanglement is needed in harder regimes.
+
+* 06_h2_2q_vs_mrscore : Gate count increases linearly with layers and is mostly independent of MR score → cost is controlled by ansatz size.
+
+* 07_h2_depth_vs_mrscore :Circuit Depth Scaling with HEA Layers (H₂) - Circuit depth scales linearly with number of layers, again mostly independent of MR character.
+
+* 08_h4_vqe_error_vs_mrscore:  VQE Energy Error vs MR Character- Error generally increases with MR character, showing VQE struggles more in strongly correlated regions.
+
+* 09_h4_error: Best Achievable VQE Error vs Distortion (H₄)-Error is lowest near symmetric geometry creases with distortion, showing harder electronic structure away from equilibrium.
+
+* 10_h4_mrscore_vs_delta : Multireference Character vs Distortion (H₄) -MR character peaks at symmetric distortion, indicating strongest correlation at that geometry.
+
+* 11_h4_noons_vs_delta :  Natural Orbital Occupations vs Distortion (H4) -Orbitals become more fractionally occupied near symmetric distortion → clear multireference behavior.
+
+*12_h4_2q_vs_mrscore : Two-Qubit Gate Scaling with HEA Layers -Gate count scales linearly with layers and is not strongly affected by MR character.
+
+* 13_h4_depth_vs_mrscore: Circuit Depth Scaling with HEA Layers - Circuit depth depends mainly on ansatz size (layers), not directly on system difficulty.
+
